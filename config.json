@@ -1,0 +1,16 @@
+{
+  "provider": "openai",
+  "max_length": 200,
+  "proxy": "",
+  "language": "en",
+  "timeout": 10,
+  "commit_type": "",
+  "custom-convention": "",
+  "use_gitmoji": false,
+  "max_redirects": 5,
+  "open_ai": {
+    "api_key": "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",
+    "model": "gpt-4o-mini",
+    "url": ""
+  }
+}
