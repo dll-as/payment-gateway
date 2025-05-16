@@ -1,42 +1,84 @@
 package main
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/logger"
-
 	"github.com/rezatg/payment-gateway/config"
+	"github.com/rezatg/payment-gateway/internal/api/auth"
+	"github.com/rezatg/payment-gateway/internal/api/invoice"
+	"github.com/rezatg/payment-gateway/internal/api/payment"
 	"github.com/rezatg/payment-gateway/internal/api/router"
-	"github.com/rezatg/payment-gateway/internal/core/database"
+	"github.com/rezatg/payment-gateway/internal/database"
 	"github.com/rezatg/payment-gateway/internal/repository"
-	"github.com/rezatg/payment-gateway/internal/services/auth"
+	authService "github.com/rezatg/payment-gateway/internal/services/auth"
+	"github.com/rezatg/payment-gateway/internal/services/blockchain"
+	invoiceService "github.com/rezatg/payment-gateway/internal/services/invoice"
+	"github.com/rezatg/payment-gateway/pkg/logger"
 )
 
-func main() {
-	// Load .env config
-	config.LoadConfig()
+// initApp initializes the Fiber app and dependencies
+func initApp() (*fiber.App, error) {
+	// Load configuration
+	if err := config.LoadConfig(); err != nil {
+		return nil, err
+	}
 
-	// Create Fiber instance
-	app := fiber.New()
+	// Initialize logger
+	logger.Init()
 
-	// Global middlewares
-	app.Use(logger.New())
+	// Initialize Fiber app
+	app := fiber.New(fiber.Config{
+		AppName: "Payment Gateway",
+		ErrorHandler: func(c fiber.Ctx, err error) error {
+			logger.Error("Request error", err, "path", c.Path(), "method", c.Method())
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Internal Server Error",
+				"code":  fiber.StatusInternalServerError,
+			})
+		},
+	})
 
-	// Connect to the database
-	dbConn := database.ConnectPostgres()
+	// Connect to database
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
 
-	// Create UserRepository instance
-	userRepo := repository.NewUserRepository(dbConn)
+	// Create repositories
+	userRepo := repository.NewUserRepository(db)
+	invoiceRepo := repository.NewInvoiceRepository(db)
 
-	// Create AuthService instance
-	service := auth.NewAuthService(userRepo)
+	// Create blockchain services
+	blockchainFactory := blockchain.NewFactory()
+
+	// Create services
+	authService := authService.New(userRepo)
+	invoiceService := invoiceService.New(invoiceRepo, authService)
+
+	// Create handlers
+	authHandler := auth.New(authService)
+	paymentHandler := payment.New(blockchainFactory, authService)
+	invoiceHandler := invoice.New(invoiceService)
 
 	// Register API routes
-	router.RegisterAPIRoutes(app, service)
+	router.RegisterAPIRoutes(app, router.Dependencies{
+		AuthHandler:    authHandler,
+		PaymentHandler: paymentHandler,
+		InvoiceHandler: invoiceHandler,
+	})
+
+	return app, nil
+}
+
+func main() {
+	app, err := initApp()
+	if err != nil {
+		logger.Fatal("Failed to initialize app", err)
+	}
 
 	// Start server
-	port := config.GetEnv("PORT", "3000")
-	log.Printf("🚀 Server running on port %s...", port)
-	log.Fatal(app.Listen(":" + port))
+	port := config.GetEnv("PORT", "8080")
+	logger.Info("Starting server", "port", port)
+	if err := app.Listen(":" + port); err != nil {
+		logger.Fatal("Failed to start server", err, "port", port)
+	}
 }

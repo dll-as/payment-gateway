@@ -11,6 +11,10 @@ const tronGridAPI = "https://api.trongrid.io/v1/accounts"
 
 type TronService struct{}
 
+func NewTronService() *TronService {
+	return &TronService{}
+}
+
 func (t *TronService) GenerateAddress() (string, error) {
 	return "TXabc123...", nil
 }
