@@ -5,14 +5,14 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/rezatg/payment-gateway/config"
+	// "github.com/rezatg/payment-gateway/config"
 	"github.com/rezatg/payment-gateway/pkg/logger"
 )
 
 // Connect establishes a database connection with optimized settings
 func Connect() (*sql.DB, error) {
-	connStr := config.GetEnv("DATABASE_URL", "postgres://user:password@localhost:5432/payment_gateway?sslmode=disable")
-	db, err := sql.Open("postgres", connStr)
+	// connStr := config.GetEnv("DATABASE_URL", "postgres://user:password@localhost:5432/payment_gateway?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://reza:rezatg15%23%23%23@localhost:5432/tg?sslmode=disable")
 	if err != nil {
 		logger.Error("Failed to open database connection", err)
 		return nil, err

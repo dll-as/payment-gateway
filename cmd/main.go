@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/rezatg/payment-gateway/config"
 	"github.com/rezatg/payment-gateway/internal/api/auth"
 	"github.com/rezatg/payment-gateway/internal/api/invoice"
@@ -36,6 +39,18 @@ func initApp() (*fiber.App, error) {
 			})
 		},
 	})
+
+	// Add CORS middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{"http://localhost:3000", "http://localhost:3001"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	}))
+
+	// Run database migrations
+	if err := database.RunMigrations(); err != nil {
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
 
 	// Connect to database
 	db, err := database.Connect()
