@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
@@ -26,7 +27,10 @@ func initApp() (*fiber.App, error) {
 	}
 
 	// Initialize logger
-	logger.Init()
+	err := logger.InitLogger()
+	if err != nil {
+		log.Fatalf("failed to initialize zap logger: %v", err)
+	}
 
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
@@ -89,6 +93,7 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize app", err)
 	}
+	defer logger.Logger.Sync()
 
 	// Start server
 	port := config.GetEnv("PORT", "8080")

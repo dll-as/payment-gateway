@@ -15,13 +15,9 @@ var Logger *zap.Logger
 var SugaredLogger *zap.SugaredLogger
 
 // Init initializes the global Zap logger
-func Init() {
+func InitLogger() error {
 	logLevel := config.GetEnv("LOG_LEVEL", "info")
-
-	// Configure encoder for JSON output
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	env := config.GetEnv("APP_ENV", "development")
 
 	// Configure core
 	var level zapcore.Level
@@ -36,8 +32,22 @@ func Init() {
 		level = zapcore.InfoLevel
 	}
 
+	// Configure encoder for JSON output
+	var encoder zapcore.Encoder
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	if env == "production" {
+		encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+		encoder = zapcore.NewJSONEncoder(encoderConfig)
+	} else {
+		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+		encoder = zapcore.NewConsoleEncoder(encoderConfig)
+	}
+
 	core := zapcore.NewCore(
-		zapcore.NewJSONEncoder(encoderConfig),
+		encoder,
 		zapcore.Lock(os.Stdout),
 		zap.NewAtomicLevelAt(level),
 	)
@@ -46,8 +56,7 @@ func Init() {
 	Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 	SugaredLogger = Logger.Sugar()
 
-	// Ensure logs are flushed on exit
-	defer SugaredLogger.Sync()
+	return nil
 }
 
 // Debug logs a debug message with optional fields
