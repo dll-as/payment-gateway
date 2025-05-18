@@ -10,7 +10,7 @@ import (
 
 // UserRepository handles user database operations
 type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
+	Register(ctx context.Context, user *models.User) error
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
@@ -24,12 +24,11 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 // Create creates a new user
-func (r *userRepository) Create(ctx context.Context, user *models.User) error {
-	err := r.db.QueryRowContext(ctx,
-		"INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id",
-		user.Email, user.Password,
-	).Scan(&user.ID)
-	if err != nil {
+func (r *userRepository) Register(ctx context.Context, user *models.User) error {
+	if err := r.db.QueryRowContext(ctx,
+		"INSERT INTO users (email, password, full_name, role) VALUES ($1, $2, $3, $4) RETURNING id",
+		user.Email, user.Password, user.FullName, user.Role,
+	).Scan(&user.ID); err != nil {
 		logger.Error("Failed to create user", err, "email", user.Email)
 		return err
 	}
@@ -41,15 +40,28 @@ func (r *userRepository) Create(ctx context.Context, user *models.User) error {
 // FindByEmail finds a user by email
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	err := r.db.QueryRowContext(ctx,
-		"SELECT id, email, password FROM users WHERE email = $1 LIMIT 1",
-		email,
-	).Scan(&user.ID, &user.Email, &user.Password)
-	if err == sql.ErrNoRows {
+
+	if err := r.db.QueryRowContext(ctx,
+		"SELECT id, email, password FROM users WHERE email = $1 LIMIT 1", email,
+	).Scan(&user.ID, &user.Email, &user.Password); err == sql.ErrNoRows {
 		return nil, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		logger.Error("Failed to find user", err, "email", email)
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, error) {
+	var user models.User
+
+	if err := r.db.QueryRowContext(ctx,
+		"SELECT id, email, password, full_name, role FROM users WHERE email = $1 LIMIT 1", id,
+	).Scan(&user.ID, &user.Email, &user.Password, &user.FullName, &user.Role); err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		logger.Error("Failed to find user", err, "id", id)
 		return nil, err
 	}
 

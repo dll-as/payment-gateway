@@ -19,7 +19,7 @@ type Dependencies struct {
 func RegisterAPIRoutes(app *fiber.App, deps Dependencies) {
 	// Global middlewares
 	app.Use(middleware.LoggerMiddleware())
-	app.Use(middleware.RateLimitMiddleware())
+	// app.Use(middleware.RateLimitMiddleware())
 
 	// API group
 	api := app.Group("/api")

@@ -132,12 +132,11 @@ func (s *authService) Register(ctx context.Context, email, password string) erro
 	if err != nil {
 		logger.Error("Failed to check existing user", err, "email", email)
 		return errors.NewInternalServerError("Failed to register", err.Error())
-	}
-	if user != nil {
+	} else if user != nil {
 		return errors.NewConflictError("Email already exists")
 	}
 
-	hashedPassword, err := utils.HashPassword(password)
+	password, err = utils.HashPassword(password)
 	if err != nil {
 		logger.Error("Failed to hash password", err, "email", email)
 		return errors.NewInternalServerError("Failed to register", err.Error())
@@ -145,9 +144,11 @@ func (s *authService) Register(ctx context.Context, email, password string) erro
 
 	newUser := &models.User{
 		Email:    email,
-		Password: hashedPassword,
+		Password: password,
+		FullName: "reza",
+		Role:     0,
 	}
-	if err := s.userRepo.Create(ctx, newUser); err != nil {
+	if err = s.userRepo.Register(ctx, newUser); err != nil {
 		logger.Error("Failed to create user", err, "email", email)
 		return errors.NewInternalServerError("Failed to register", err.Error())
 	}

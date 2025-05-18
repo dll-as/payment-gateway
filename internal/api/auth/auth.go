@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 	"github.com/rezatg/payment-gateway/internal/models"
@@ -26,7 +29,22 @@ func New(service auth.AuthService) *AuthHandler {
 // Login handles user login
 func (h *AuthHandler) Login(c fiber.Ctx) error {
 	var req models.LoginRequest
-	if err := c.Bind().JSON(&req); err != nil {
+	contentType := c.Get("Content-Type")
+	var err error
+	if strings.Contains(contentType, "application/json") {
+		fmt.Println("dd")
+		err = c.Bind().JSON(&req)
+	} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+		err = c.Bind().Form(&req)
+	} else {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Error:   "Unsupported Content-Type",
+			Code:    fiber.StatusBadRequest,
+			Details: "Use application/json or application/x-www-form-urlencoded",
+		})
+	}
+
+	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
 			Error:   "Invalid request",
 			Code:    fiber.StatusBadRequest,

@@ -4,7 +4,7 @@ import "github.com/rezatg/payment-gateway/pkg/errors"
 
 // BlockchainService defines the interface for blockchain operations
 type BlockchainService interface {
-	GenerateAddress() (string, error)
+	GenerateAddress() (address string, encryptedPrivateKey string, err error)
 	GetBalance(address string) (float64, error)
 	SendTransaction(fromPrivKey, toAddress string, amount float64) (string, error)
 	CheckTxConfirmed(txHash string) (bool, error)
@@ -22,10 +22,10 @@ type blockchainFactory struct {
 }
 
 // NewFactory creates a new blockchain factory
-func NewFactory() Factory {
+func NewFactory(encryptionKey []byte) Factory {
 	return &blockchainFactory{
 		ethService:  NewEthService(),
-		tronService: NewTronService(),
+		tronService: NewTronService(encryptionKey),
 	}
 }
 

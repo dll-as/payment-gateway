@@ -1,10 +1,15 @@
 package models
 
+import "time"
+
 // User represents a user in the system
 type User struct {
-	ID       uint   `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID        uint      `json:"id"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	FullName  string    `json:"full_name"`
+	Role      uint8     `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // LoginRequest represents the login request payload

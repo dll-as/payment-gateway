@@ -9,4 +9,5 @@ func RegisterRoutes(router fiber.Router, handler *PaymentHandler) {
 	paymentGroup := router.Group("/payment")
 	// paymentGroup.Use(middleware.AuthMiddleware(handler.service.GetAuthService()))
 	paymentGroup.Post("/check-balance", handler.CheckBalance)
+	paymentGroup.Post("/generate-address", handler.GenerateAddress)
 }

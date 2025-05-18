@@ -30,17 +30,18 @@ func NewEthService() *EthService {
 }
 
 // GenerateAddress generates a new Ethereum address
-func (s *EthService) GenerateAddress() (string, error) {
-	privateKey, err := crypto.GenerateKey()
-	if err != nil {
-		logger.Error("Failed to generate Ethereum private key", err)
-		return "", errors.NewInternalServerError("Failed to generate address", err.Error())
-	}
+func (s *EthService) GenerateAddress() (string, string, error) {
+	// privateKey, err := crypto.GenerateKey()
+	// if err != nil {
+	// 	logger.Error("Failed to generate Ethereum private key", err)
+	// 	return "", errors.NewInternalServerError("Failed to generate address", err.Error())
+	// }
 
-	publicKey := privateKey.PublicKey
-	address := crypto.PubkeyToAddress(publicKey)
-	logger.Info("Generated Ethereum address", "address", address.Hex())
-	return address.Hex(), nil
+	// publicKey := privateKey.PublicKey
+	// address := crypto.PubkeyToAddress(publicKey)
+	// logger.Info("Generated Ethereum address", "address", address.Hex())
+	// return address.Hex(), nil
+	return "", "", nil
 }
 
 // GetBalance retrieves the balance of an Ethereum address
